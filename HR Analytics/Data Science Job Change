@@ -1,0 +1,311 @@
+###### HR Analytics: Predicting Data Science Job Changes #######################
+####################    classification problem  ##############################
+
+#1. Load the data sets;
+ds_job_change<- read.csv("C:\\Users\\Rohit Kumar (Prince)\\OneDrive\\Desktop\\Ivy_Data_science\\R-\\Kaggle_dataset\\Data_science_job\\aug_train.csv",na.strings = c("","","NA","NULL"))
+
+#checking first six rows of dataset
+head(ds_job_change)
+
+#checking the dimension of dataset
+dim(ds_job_change)
+#structure of dataset
+str(ds_job_change)
+#summary of the dataset 
+summary(ds_job_change)
+#removing useless column from dataset
+ds_job_change<- ds_job_change[,-c(1,2)]
+ds_job_change$company_size<-NULL
+names(ds_job_change)
+
+#checking the variables move to factor
+lapply(ds_job_change,function(x)length(unique(x)))
+
+#We are converting variables to factors
+factors_cols<-c("gender","relevent_experience","enrolled_university","education_level","major_discipline","company_type","target")
+for(i in factors_cols){
+  ds_job_change[,i]<-as.factor(ds_job_change[,i])
+}
+
+str(ds_job_change)
+
+#we will adjust the data (encoding concept)
+ds_job_change$experience<- ifelse(ds_job_change$experience==">20",20,ds_job_change$experience)
+ds_job_change$experience<- ifelse(ds_job_change$experience=="<1",1,ds_job_change$experience)
+
+ds_job_change$last_new_job<- ifelse(ds_job_change$last_new_job==">4",4,ds_job_change$last_new_job)
+ds_job_change$last_new_job<- ifelse(ds_job_change$last_new_job=="never",0,ds_job_change$last_new_job)
+
+ds_job_change$experience<-as.numeric(ds_job_change$experience)
+ds_job_change$last_new_job<-as.numeric(ds_job_change$last_new_job)
+
+#checking missing values
+colSums(is.na(ds_job_change))
+#yes we found missing data in columns:- (gender,enrolled_university,education_level,major_discipline,experience, company_type,last_new_job)
+
+#FInd the Missing values data by visualization
+library(Amelia)
+
+missmap(ds_job_change,main = "missing data",col = c('red','black'),legend = F)
+
+table(ds_job_change$gender)
+
+
+
+
+#We have to find the mode fro the categorical missing data
+getmode <- function(v) {
+  uniqv <- unique(v)
+  uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+colSums(is.na(ds_job_change))/nrow(ds_job_change) #To check how much missing %values has  in data
+#Company_type have 33% missing value we will remove it and useless column for us
+ds_job_change$company_type<- NULL
+
+#Now we will replace the missing values with mode and median
+
+
+ds_job_change$enrolled_university[which(is.na(ds_job_change$enrolled_university))]<-getmode(ds_job_change$enrolled_university)
+ds_job_change$education_level[which(is.na(ds_job_change$education_level))]<-getmode(ds_job_change$education_level)
+ds_job_change$major_discipline[which(is.na(ds_job_change$major_discipline))]<-getmode(ds_job_change$major_discipline)
+
+
+ds_job_change$experience[which(is.na(ds_job_change$experience))]<-median(ds_job_change$experience,na.rm = T)
+ds_job_change$last_new_job[which(is.na(ds_job_change$last_new_job))]<-median(ds_job_change$last_new_job,na.rm = T)
+
+colSums(is.na(ds_job_change))
+
+
+
+ds_job_change$relevent_experience<-ifelse(ds_job_change$relevent_experience=="Has relevent experience",1,0)
+
+ds_job_change$city_development_index<-NULL
+
+ds_job_change$relevent_experience<-as.factor(ds_job_change$relevent_experience)
+
+str(ds_job_change)
+
+colSums(is.na(ds_job_change))
+
+table(ds_job_change$gender)
+ds_job_change$gender[which(is.na(ds_job_change))]<- "Male"
+
+
+################################################################################
+#############   Data visualization        #####################################
+
+#for the categorical variables we use Bar Plot:
+library(RColorBrewer)
+bars_cols<-c("gender","relevent_experience","enrolled_university","education_level","major_discipline","target")
+
+#splitting the window into 2 parts
+par(mfrow=c(2,4))
+
+#looping fro get the all categorical variables together: Bar Plot 
+for(i in bars_cols){
+  barplot(table(ds_job_change[,c(i)]),main = paste("Barplot of:",i),
+          col = brewer.pal(8,"Paired"))
+}
+
+#for continuous variables we will use histogram:
+
+hist_cols<- c("experience","last_new_job","training_hours")
+par(mfrow=c(2,3))
+
+for(i in hist_cols){
+  hist(ds_job_change[,c(i)],main = paste("Histogram of:",i),
+       col = brewer.pal(8,"Paired"))
+}
+
+##########################################################################
+#now we will check relationship strength:
+#in this case our target variables is categorical, and predictor is categorical + continous
+#categorical vs continuous---------> ANOVA test
+#categorical vs categorical--------> Chi-square test
+
+#Relationship strength: continuous vs categorical-----> ANOVA Test
+summary(aov(experience~target,data = ds_job_change))
+summary(aov(last_new_job~target,data = ds_job_change))
+summary(aov(training_hours~target,data = ds_job_change))
+
+#all these variables are good we include all the variables
+
+#Target variables is categorical and predictor variables is also categorical 
+#categorical vs categorical--------> Chi-square test
+# it will take crossTabulation as a input
+chi_cols<- c("gender","relevent_experience","enrolled_university","education_level","major_discipline")
+
+for(i in chi_cols){
+  CrossTabResult=table(ds_job_change[,c('target',i)])
+  ChiResult=chisq.test(CrossTabResult)
+  print(i)
+  print(ChiResult)
+}
+
+#we will remove: ("gender","major_discipline")- getting p value larger
+
+#removing the columns from dataset
+ds_job_change$gender<-NULL
+ds_job_change$major_discipline<-NULL
+
+str(ds_job_change)
+head(ds_job_change)
+
+################################################################################
+################################################################################
+############### Split the data into training and testing data ####################
+
+#library for splitting the test data and training data;
+library(caTools)
+set.seed(101)
+#We will split the sample into training 75% and testing 25%
+split<- sample.split(ds_job_change$target,SplitRatio = 0.75)
+split
+table(split)
+
+#training----> True, test-----> False
+training<- subset(ds_job_change,split==T)
+test<- subset(ds_job_change,split==F)
+
+###############################################################################
+
+# We will build logistic model by using glm()
+lg_mdl<- glm(target~.,data = training,family = "binomial")
+summary(lg_mdl)
+
+###Step() will help to find best AIC value 
+#lower the value of AIC: better the model
+step(lg_mdl)
+
+lg_mdl1<- glm(formula = target ~ relevent_experience + enrolled_university + 
+                education_level + experience + training_hours, family = "binomial", 
+              data = training)
+summary(lg_mdl1)
+
+################################################################################
+
+#predicting the model 
+pred_dsj<- predict(lg_mdl1,newdata = test,type = 'response')
+pred_dsj # it will probability value
+
+#We are taking the threshold value 0.5
+pred_dsj<-ifelse(pred_dsj>0.5,1,0)
+
+#Now we will create the confusion matrix table by using 
+#actual data and predict data
+cm<-table(test$target,pred_dsj)
+cm
+
+
+# We have to find all the parameter of confusion matrix 
+#accuracy, recall/sensitivity,precision/ TP , specificity
+
+#install packages "caret" I had already installed it so, I will connect to library
+library(caret)
+
+confusionMatrix(cm)
+#getting accuracy 75.32%
+
+
+#Another classification Model:
+###############################################################################
+###############################################################################
+####################### Decision Tree #########################################
+
+library(rpart)
+library(rpart.plot)
+
+str(ds_job_change)
+
+
+dtee<-rpart(target~.,data = training,method = 'class',control =rpart.control(minsplit =1,minbucket=1, cp=0))
+summary(dtee)
+plot(dtee)
+
+dt_predict<- (predict(dtee,newdata = test,type = 'class'))
+dt_predict
+dt_predict<- ifelse(dt_predict==2,1,0)
+
+str(ds_job_change)
+
+head(ds_job_change)
+cm1<-table(test$target,dt_predict)
+cm1
+
+confusionMatrix(cm1)
+
+#Accuracy : 0.6559
+
+
+################################################################################
+###############################################################################
+################## Random forest #############################################
+
+head(ds_job_change)
+
+str(ds_job_change)
+
+ds_job_change$target<- as.numeric(ds_job_change$target)
+ds_job_change$target<- ifelse(ds_job_change$target==2,1,0)
+
+colnames(ds_job_change)
+
+########## building the random forest model by using Random Forest packages 
+library(randomForest)
+rf_ds_job_change<- randomForest(target~.,data = training)
+
+summary(rf_ds_job_change)
+
+################################################################################
+#predict the model 
+
+rf_predict<- predict(rf_ds_job_change,newdata = test)
+
+rf_predict # it will give us probability value 
+
+#now we have to convert rf_predict to 0 and 1 values by giving threshold value 0.50.
+
+rf_predict<- ifelse(rf_predict>0.5,1,0)
+
+rf_predict
+
+################################################################################
+
+####### now we have to create confusion matrix table ##########################
+
+cm2<- table(test$target,rf_predict)
+cm2
+
+##############################################################################
+#Now we have to find the accuracy, sensitivity, precision and specificity#######
+
+# we have to install packages 'caret"
+
+library(caret)
+
+confusionMatrix(cm2)
+
+#Accuracy : 74.75%  
+
+###############################################################################
+###############################################################################
+##################### K-fold Cross_validation #################################
+
+str(ds_job_change)
+
+#define training control
+library(caret)
+library(naivebayes)
+set.seed(123)
+training_control<- trainControl(method = "repeatedcv", number = 10,repeats = 3)
+
+#Train the model
+k_model<- train(factor(target)~.,data= ds_job_change, method= "naive_bayes",trcontrol=training_control)
+
+print(k_model)
+
+#The process of splitting the data into k-folds can be repeated a number of times, 
+#this is called repeated k-fold cross validation.
+#The final model error is taken as the mean error from the number of repeats.
+#The following example uses 10-fold cross validation with 3 repeats:
