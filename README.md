@@ -136,7 +136,7 @@ Summary of dataset:
 ### Lessons Learned
 - I learned how to build a machine learning classification model and understand the concept of confusion matrix during working on this project.
 
-[README (1).md](https://github.com/rahkum96/Supervised-Mchine-Learning/files/7149229/README.1.md)
+
 
 
 
