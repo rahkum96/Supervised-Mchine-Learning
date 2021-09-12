@@ -1,4 +1,4 @@
-# Supervised Mchine Learning
+# Supervised Machine Learning
  #### Logistic Regression Model 
 
 ## Predictive Analysis of Ad-click Website data
