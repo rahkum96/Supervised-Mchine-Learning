@@ -3,8 +3,9 @@
 
 ## Predictive Analysis of Ad-click Website data
 - Ranging from high-profile platforms to local listings, online directories cover a range of audiences as well as additional details about your business or organization. This     helps promote your website by boosting its search engine ranking, increasing the chances that they’ll get paid by Google by drawing traffic to google ad on the website. The     goal of the case study is to Predict who is likely going to click on the Advertisement so it can contribute to the more revenue generation to the organization.
+  
+  ![image](https://user-images.githubusercontent.com/86415241/132979835-9cf8f22b-42a7-4fc7-b624-366a704b0c07.png)
 
-![image](https://user-images.githubusercontent.com/86415241/132979075-885a498c-b74f-419e-bc00-32525b229eec.png)
 
 ### Objective
 - The goal of the case study is to Predict who is likely going to click on the Advertisement so it can contribute to the more revenue generation to the organization
